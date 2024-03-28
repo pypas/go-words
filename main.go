@@ -63,8 +63,16 @@ func readWordsFromFile(filename string) ([]string, error) {
 // convertPatternToRegex converts a pattern string into a regular expression pattern.
 // For example, "_ l _ _ t" becomes "^.l..t$".
 func convertPatternToRegex(pattern string) string {
-    pattern = strings.ReplaceAll(pattern, "_", ".") // Replace underscores with dots (any character)
-    return "^" + pattern + "$"                      // Add anchors to match the whole word
+	// Replace underscores with dots (any character)
+	regexPattern := strings.ReplaceAll(pattern, "_", ".")
+
+	// Replace '*' with '.*' to match any number of characters
+	regexPattern = strings.ReplaceAll(regexPattern, "*", ".*")
+
+	// Add anchors to match the whole string
+	regexPattern = "^" + regexPattern + "$"
+
+	return regexPattern
 }
 
 // findMatchingWords finds words from the given list that match the given regular expression pattern.
