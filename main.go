@@ -6,6 +6,8 @@ import (
     "os"
     "regexp"
     "strings"
+
+	"github.com/fatih/color"
 )
 
 func main() {
@@ -24,9 +26,8 @@ func main() {
     // Compile the regular expression pattern
     regexPattern := convertPatternToRegex(pattern)
 
-    // Find and print matching words
-    matchedWords := findMatchingWords(words, regexPattern)
-    fmt.Println("Palavras:", matchedWords)
+    // Find and print matching words in a colorful grid
+    printMatchingWordsGrid(words, regexPattern)
 }
 
 // readWordsFromFile reads words from a file and returns them as a slice of strings.
@@ -66,4 +67,30 @@ func findMatchingWords(words []string, pattern string) []string {
         }
     }
     return matchedWords
+}
+
+// printMatchingWordsGrid finds words from the given list that match the given regular expression pattern
+// and prints them in a colorful grid.
+func printMatchingWordsGrid(words []string, pattern string) {
+    matchedWords := findMatchingWords(words, pattern)
+    if len(matchedWords) == 0 {
+        fmt.Println("No matching words found.")
+        return
+    }
+
+    // Determine the number of columns in the grid
+    numCols := 5
+    numRows := (len(matchedWords) + numCols - 1) / numCols
+
+    // Print the matched words in a colorful grid
+    for i := 0; i < numRows; i++ {
+        for j := 0; j < numCols; j++ {
+            index := i*numCols + j
+            if index < len(matchedWords) {
+                // Colorize the word
+                color.New(color.FgHiRed).Printf("%-15s", matchedWords[index])
+            }
+        }
+        fmt.Println()
+    }
 }
