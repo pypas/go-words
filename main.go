@@ -1,11 +1,11 @@
 package main
 
 import (
-    "bufio"
-    "fmt"
-    "os"
-    "regexp"
-    "strings"
+	"bufio"
+	"fmt"
+	"os"
+	"regexp"
+	"strings"
 
 	"github.com/fatih/color"
 )
@@ -18,16 +18,26 @@ func main() {
         return
     }
 
-    // Prompt the user to input a pattern
-    fmt.Print("Escreva o padrão (e.g., p_an__): ")
-    var pattern string
-    fmt.Scanln(&pattern)
+	// Main loop
+    scanner := bufio.NewScanner(os.Stdin)
+    for {
+          // Prompt the user to input a pattern
+    fmt.Print("Escreva o padrão (ex. c_s_) ou escreva 'q' para sair: ")
+        scanner.Scan()
+        input := scanner.Text()
 
-    // Compile the regular expression pattern
-    regexPattern := convertPatternToRegex(pattern)
+        // Check if the user wants to quit
+        if input == "q" {
+            fmt.Println("Saindo...")
+            return
+        }
 
-    // Find and print matching words in a colorful grid
-    printMatchingWordsGrid(words, regexPattern)
+        // Compile the regular expression pattern
+        regexPattern := convertPatternToRegex(input)
+
+        // Find and print matching words in a colorful grid
+    	printMatchingWordsGrid(words, regexPattern)
+    }
 }
 
 // readWordsFromFile reads words from a file and returns them as a slice of strings.
@@ -74,8 +84,13 @@ func findMatchingWords(words []string, pattern string) []string {
 func printMatchingWordsGrid(words []string, pattern string) {
     matchedWords := findMatchingWords(words, pattern)
     if len(matchedWords) == 0 {
-        fmt.Println("No matching words found.")
+        fmt.Println("Nenhuma palavra encontrada.")
         return
+    }
+
+	if len(matchedWords) > 100 {
+		color.New(color.FgHiRed).Println("A lista completa não pode ser exibida")
+        matchedWords = matchedWords[:100]
     }
 
     // Determine the number of columns in the grid
@@ -88,7 +103,7 @@ func printMatchingWordsGrid(words []string, pattern string) {
             index := i*numCols + j
             if index < len(matchedWords) {
                 // Colorize the word
-                color.New(color.FgHiRed).Printf("%-15s", matchedWords[index])
+                color.New(color.FgHiGreen).Printf("%-15s", matchedWords[index])
             }
         }
         fmt.Println()
