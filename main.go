@@ -12,7 +12,13 @@ import (
 
 func main() {
     // Read words from file
-    words, err := readWordsFromFile("words.txt")
+    words_pt, err := readWordsFromFile("words_pt.txt")
+    if err != nil {
+        fmt.Println("Error reading words:", err)
+        return
+    }
+
+	words_en, err := readWordsFromFile("words_en.txt")
     if err != nil {
         fmt.Println("Error reading words:", err)
         return
@@ -20,9 +26,16 @@ func main() {
 
 	// Main loop
     scanner := bufio.NewScanner(os.Stdin)
+
+	isPortuguese := true
     for {
-          // Prompt the user to input a pattern
-    fmt.Print("Escreva o padrão (ex. c_s_) ou escreva 'q' para sair: ")
+        // Prompt the user to input a pattern
+		if isPortuguese {
+			color.New(color.FgMagenta).Println("Idioma: Português")
+		} else {
+			color.New(color.FgMagenta).Println("Language: English")
+		}
+		color.New(color.FgHiMagenta).Println("Escreva o padrão (ex. c_s_), 't' para trocar o idioma ou escreva 'q' para sair: ")
         scanner.Scan()
         input := scanner.Text()
 
@@ -32,11 +45,20 @@ func main() {
             return
         }
 
+		if input == "t" {
+            isPortuguese = !isPortuguese
+			continue
+        }
+
         // Compile the regular expression pattern
         regexPattern := convertPatternToRegex(input)
 
         // Find and print matching words in a colorful grid
-    	printMatchingWordsGrid(words, regexPattern)
+		if isPortuguese {
+			printMatchingWordsGrid(words_pt, regexPattern)
+		} else {
+			printMatchingWordsGrid(words_en, regexPattern)
+		}
     }
 }
 
@@ -96,13 +118,13 @@ func printMatchingWordsGrid(words []string, pattern string) {
         return
     }
 
-	if len(matchedWords) > 100 {
+	if len(matchedWords) > 300 {
 		color.New(color.FgHiRed).Println("A lista completa não pode ser exibida")
-        matchedWords = matchedWords[:100]
+        matchedWords = matchedWords[:300]
     }
 
     // Determine the number of columns in the grid
-    numCols := 5
+    numCols := 3
     numRows := (len(matchedWords) + numCols - 1) / numCols
 
     // Print the matched words in a colorful grid
@@ -111,7 +133,7 @@ func printMatchingWordsGrid(words []string, pattern string) {
             index := i*numCols + j
             if index < len(matchedWords) {
                 // Colorize the word
-                color.New(color.FgHiGreen).Printf("%-15s", matchedWords[index])
+                color.New(color.FgHiGreen).Printf("%-22s", matchedWords[index])
             }
         }
         fmt.Println()
