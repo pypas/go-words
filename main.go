@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"regexp"
+	"sort"
 	"strings"
 
 	"github.com/fatih/color"
@@ -29,13 +30,15 @@ func main() {
 
 	isPortuguese := true
     for {
+		c := color.New(color.FgMagenta)
+		chi := color.New(color.FgHiMagenta)
         // Prompt the user to input a pattern
 		if isPortuguese {
-			color.New(color.FgMagenta).Println("Idioma: Português")
+			c.Println("Idioma: Português")
 		} else {
-			color.New(color.FgMagenta).Println("Language: English")
+			c.Println("Idioma: Inglês")
 		}
-		color.New(color.FgHiMagenta).Println("Escreva o padrão (ex. c_s_), 't' para trocar o idioma ou escreva 'q' para sair: ")
+		chi.Println("Escreva o padrão (ex. c_s_), 't' para trocar o idioma ou escreva 'q' para sair: ")
         scanner.Scan()
         input := scanner.Text()
 
@@ -55,29 +58,34 @@ func main() {
 
         // Find and print matching words in a colorful grid
 		if isPortuguese {
-			printMatchingWordsGrid(words_pt, regexPattern)
+			matchedWords := findMatchingWords(words_pt, regexPattern)
+			displayWordsByLength(matchedWords)
 		} else {
-			printMatchingWordsGrid(words_en, regexPattern)
+			matchedWords := findMatchingWords(words_en, regexPattern)
+			displayWordsByLength(matchedWords)
 		}
+		fmt.Println("--------------------------------------------------------------------------------")
     }
 }
 
 // readWordsFromFile reads words from a file and returns them as a slice of strings.
-func readWordsFromFile(filename string) ([]string, error) {
+func readWordsFromFile(filename string) (map[int][]string, error) {
     file, err := os.Open(filename)
     if err != nil {
         return nil, err
     }
     defer file.Close()
 
-    var words []string
-    scanner := bufio.NewScanner(file)
-    for scanner.Scan() {
-        words = append(words, scanner.Text())
-    }
-    if err := scanner.Err(); err != nil {
-        return nil, err
-    }
+    words := make(map[int][]string)
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		word := scanner.Text()
+		wordLen := len(word)
+		words[wordLen] = append(words[wordLen], word)
+	}
+	if err := scanner.Err(); err != nil {
+		return nil, err
+	}
 
     return words, nil
 }
@@ -97,45 +105,64 @@ func convertPatternToRegex(pattern string) string {
 	return regexPattern
 }
 
-// findMatchingWords finds words from the given list that match the given regular expression pattern.
-func findMatchingWords(words []string, pattern string) []string {
-    var matchedWords []string
-    regex := regexp.MustCompile(pattern)
-    for _, word := range words {
-        if regex.MatchString(word) {
-            matchedWords = append(matchedWords, word)
-        }
-    }
-    return matchedWords
+// findMatchingWords finds words from the given map of word lengths that match the given regular expression pattern.
+func findMatchingWords(words map[int][]string, pattern string) []string {
+	var matchedWords []string
+	regex := regexp.MustCompile(pattern)
+	for _, wordList := range words {
+		for _, word := range wordList {
+			if regex.MatchString(word) {
+				matchedWords = append(matchedWords, word)
+			}
+		}
+	}
+	return matchedWords
 }
 
-// printMatchingWordsGrid finds words from the given list that match the given regular expression pattern
-// and prints them in a colorful grid.
-func printMatchingWordsGrid(words []string, pattern string) {
-    matchedWords := findMatchingWords(words, pattern)
-    if len(matchedWords) == 0 {
-        fmt.Println("Nenhuma palavra encontrada.")
-        return
+// displayWordsByLength divides words by length and displays each list separately.
+func displayWordsByLength(words []string) {
+	if(len(words) == 0) {
+		color.New(color.FgRed).Println("Nenhuma palavra encontrada.")
+		return
+	}
+    // Map to store words by length
+    wordsByLength := make(map[int][]string)
+
+    // Group words by length
+    for _, word := range words {
+        wordLen := len(word)
+        wordsByLength[wordLen] = append(wordsByLength[wordLen], word)
     }
 
-	if len(matchedWords) > 300 {
-		color.New(color.FgHiRed).Println("A lista completa não pode ser exibida")
-        matchedWords = matchedWords[:300]
+	var lengths []int
+    for length := range wordsByLength {
+        lengths = append(lengths, length)
     }
+    sort.Ints(lengths)
 
-    // Determine the number of columns in the grid
-    numCols := 3
-    numRows := (len(matchedWords) + numCols - 1) / numCols
+	cgreen := color.New(color.FgGreen)
+	cyellow := color.New(color.FgYellow)
 
-    // Print the matched words in a colorful grid
-    for i := 0; i < numRows; i++ {
-        for j := 0; j < numCols; j++ {
-            index := i*numCols + j
-            if index < len(matchedWords) {
-                // Colorize the word
-                color.New(color.FgHiGreen).Printf("%-22s", matchedWords[index])
-            }
+	for _, length := range lengths {
+        wordList := wordsByLength[length]
+
+        // Print header with colored length
+        cyellow.Printf("Palavras de tamanho %d:\n", length)
+
+        // Print words
+        for i, word := range wordList {
+            if i%3 == 0 {
+				cgreen.Printf("%-25s", word)
+			} else if i%3 == 1 {
+				cgreen.Printf("%-25s", word)
+			} else {
+				cgreen.Printf("%s\n", word)
+			}
         }
-        fmt.Println()
+
+		// Print new line for odd number of words
+        if len(wordList)%3 != 0 {
+            cgreen.Println()
+        }
     }
 }
